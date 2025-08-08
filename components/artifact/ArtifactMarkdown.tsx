@@ -21,7 +21,7 @@ export function ArtifactMarkdown({ content, className }: ArtifactMarkdownProps) 
     return <Markdown>{content}</Markdown>;
   }
   
-  const { createArtifact, getArtifact, setActiveArtifact, activeArtifact } = artifactContext;
+  const { createArtifact, getArtifact, autoActivateArtifact, activeArtifact, userHasInteracted } = artifactContext;
   
   // Parse artifacts and get modified content
   const { processedContent, artifactElements, artifacts } = useMemo(() => {
@@ -70,12 +70,12 @@ export function ArtifactMarkdown({ content, className }: ArtifactMarkdownProps) 
     };
   }, [content, createArtifact]);
   
-  // Auto-activate the first artifact when it's created
+  // Auto-activate the first artifact when it's created (only if user hasn't interacted)
   useEffect(() => {
-    if (artifacts.length > 0 && !activeArtifact) {
-      setActiveArtifact(artifacts[0].id);
+    if (artifacts.length > 0 && !activeArtifact && !userHasInteracted) {
+      autoActivateArtifact(artifacts[0].id);
     }
-  }, [artifacts, activeArtifact, setActiveArtifact]);
+  }, [artifacts, activeArtifact, userHasInteracted, autoActivateArtifact]);
   
   return (
     <div className={className}>

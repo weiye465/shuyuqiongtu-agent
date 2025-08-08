@@ -7,9 +7,11 @@ interface ArtifactContextType {
   artifacts: Map<string, Artifact>;
   activeArtifact: Artifact | null;
   previewVisible: boolean;
+  userHasInteracted: boolean;
   createArtifact: (artifact: Artifact) => void;
   updateArtifact: (id: string, updates: Partial<Artifact>) => void;
   setActiveArtifact: (id: string | null) => void;
+  autoActivateArtifact: (id: string) => void;
   togglePreview: (visible?: boolean) => void;
   getArtifact: (id: string) => Artifact | undefined;
   clearArtifacts: () => void;
@@ -21,6 +23,7 @@ export function ArtifactProvider({ children }: { children: ReactNode }) {
   const [artifacts, setArtifacts] = useState(new Map<string, Artifact>());
   const [activeArtifact, setActiveArtifactState] = useState<Artifact | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
+  const [userHasInteracted, setUserHasInteracted] = useState(false);
 
   const createArtifact = useCallback((artifact: Artifact) => {
     setArtifacts(prev => {
@@ -49,6 +52,9 @@ export function ArtifactProvider({ children }: { children: ReactNode }) {
   }, [activeArtifact]);
 
   const setActiveArtifact = useCallback((id: string | null) => {
+    // Mark that user has interacted with artifacts
+    setUserHasInteracted(true);
+    
     if (id === null) {
       setActiveArtifactState(null);
       setPreviewVisible(false);
@@ -61,7 +67,19 @@ export function ArtifactProvider({ children }: { children: ReactNode }) {
     }
   }, [artifacts]);
 
+  const autoActivateArtifact = useCallback((id: string) => {
+    // Only auto-activate if user hasn't interacted yet
+    if (!userHasInteracted) {
+      const artifact = artifacts.get(id);
+      if (artifact) {
+        setActiveArtifactState(artifact);
+        setPreviewVisible(true);
+      }
+    }
+  }, [artifacts, userHasInteracted]);
+
   const togglePreview = useCallback((visible?: boolean) => {
+    setUserHasInteracted(true);
     setPreviewVisible(prev => visible !== undefined ? visible : !prev);
   }, []);
 
@@ -73,6 +91,7 @@ export function ArtifactProvider({ children }: { children: ReactNode }) {
     setArtifacts(new Map());
     setActiveArtifactState(null);
     setPreviewVisible(false);
+    setUserHasInteracted(false);
   }, []);
 
   return (
@@ -80,9 +99,11 @@ export function ArtifactProvider({ children }: { children: ReactNode }) {
       artifacts,
       activeArtifact,
       previewVisible,
+      userHasInteracted,
       createArtifact,
       updateArtifact,
       setActiveArtifact,
+      autoActivateArtifact,
       togglePreview,
       getArtifact,
       clearArtifacts
