@@ -72,28 +72,56 @@ export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
       // 使用XMLHttpRequest来跟踪上传进度
       const xhr = new XMLHttpRequest();
       
+      // 模拟的进度值，用于平滑显示
+      let simulatedProgress = 0;
+      let actualProgress = 0;
+      let progressInterval: NodeJS.Timeout;
+      
+      // 开始模拟进度（缓慢增长到90%）
+      progressInterval = setInterval(() => {
+        if (simulatedProgress < 90 && simulatedProgress < actualProgress + 20) {
+          // 缓慢增长，但不超过实际进度太多
+          simulatedProgress += 0.5; // 每50ms增加0.5%
+          setUploadProgress(Math.min(simulatedProgress, 90));
+        }
+      }, 50);
+      
       // 设置进度监听
       xhr.upload.addEventListener('progress', (event) => {
         if (event.lengthComputable) {
-          const percentage = (event.loaded / event.total) * 100;
-          console.log(`📊 Upload progress: ${percentage.toFixed(1)}%`);
-          setUploadProgress(percentage);
+          actualProgress = (event.loaded / event.total) * 100;
+          console.log(`📊 Upload progress: ${actualProgress.toFixed(1)}%`);
+          
+          // 如果实际进度超过模拟进度，更新模拟进度
+          if (actualProgress > simulatedProgress) {
+            simulatedProgress = Math.min(actualProgress, 90);
+            setUploadProgress(simulatedProgress);
+          }
         }
       });
       
       // 创建Promise来处理异步上传
       const uploadPromise = new Promise<any>((resolve, reject) => {
         xhr.onload = function() {
+          clearInterval(progressInterval);
+          
           if (xhr.status === 200) {
+            // 快速完成最后的10%
+            setUploadProgress(95);
+            setTimeout(() => setUploadProgress(100), 100);
+            
             const response = JSON.parse(xhr.responseText);
             console.log('✅ Upload complete:', response);
-            resolve(response);
+            
+            // 延迟一点返回，让100%显示一会儿
+            setTimeout(() => resolve(response), 300);
           } else {
             reject(new Error(`Upload failed with status ${xhr.status}`));
           }
         };
         
         xhr.onerror = function() {
+          clearInterval(progressInterval);
           reject(new Error('Network error during upload'));
         };
         
@@ -127,8 +155,11 @@ export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
       console.error('❌ File upload failed:', err);
       setError('文件上传失败，请重试');
     } finally {
-      setUploading(false);
-      setUploadProgress(0);
+      // 延迟重置进度条，让用户看到完成状态
+      setTimeout(() => {
+        setUploading(false);
+        setUploadProgress(0);
+      }, 500);
       console.log('🏁 Upload process completed');
     }
   };
@@ -172,13 +203,20 @@ export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
         <div className="px-3 py-2">
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span>上传中... {Math.round(uploadProgress)}%</span>
+            <span>
+              {uploadProgress < 100 ? '上传中' : '处理中'}... {Math.round(uploadProgress)}%
+            </span>
           </div>
-          <div className="mt-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+          <div className="mt-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
             <div 
-              className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500 ease-out relative"
               style={{ width: `${uploadProgress}%` }}
-            />
+            >
+              {/* 添加动画光效 */}
+              {uploadProgress < 100 && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
+              )}
+            </div>
           </div>
         </div>
       )}

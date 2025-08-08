@@ -1,7 +1,8 @@
 'use client';
 
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { tomorrow, oneLight } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useTheme } from 'next-themes';
 import { Artifact } from '../types';
 import { useEffect, useRef } from 'react';
@@ -13,7 +14,14 @@ interface CodeRendererProps {
 export default function CodeRenderer({ artifact }: CodeRendererProps) {
   const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
-  const codeStyle = theme === 'light' || theme === 'sunset' ? oneLight : tomorrow;
+  const codeStyle = theme === 'light' || theme === 'sunset' ? oneLight : oneDark;
+  
+  // Log for debugging
+  console.log('[CodeRenderer] Rendering code with:', {
+    language: artifact.language || 'text',
+    theme: theme,
+    styleApplied: codeStyle ? 'yes' : 'no'
+  });
   
   // 强制修复pre标签宽度问题
   useEffect(() => {
@@ -47,12 +55,19 @@ export default function CodeRenderer({ artifact }: CodeRendererProps) {
             padding: '1rem',
             minHeight: '100%',
             fontSize: '0.875rem',
-            backgroundColor: 'transparent',
             maxWidth: '100%',
             overflowX: 'auto',
-            // 强制限制宽度
             display: 'block',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            // Ensure background from theme is applied
+            background: codeStyle?.['pre[class*="language-"]']?.background || '#1e1e1e'
+          }}
+          showLineNumbers={true}
+          lineNumberStyle={{
+            minWidth: '3em',
+            paddingRight: '1em',
+            color: '#6b7280',
+            userSelect: 'none'
           }}
           // 禁用长行换行，使用滚动
           wrapLines={false}
