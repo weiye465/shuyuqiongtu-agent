@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Markdown } from '@/components/markdown';
 import { ArtifactCard } from './ArtifactCard';
 import { useArtifactSafe } from './ArtifactProvider';
@@ -14,22 +14,28 @@ interface ArtifactMarkdownProps {
 export function ArtifactMarkdown({ content, className }: ArtifactMarkdownProps) {
   const artifactContext = useArtifactSafe();
   const { parseArtifactTags } = useArtifactParser();
+  const firstArtifactIdRef = useRef<string | null>(null);
   
   // If not in ArtifactProvider, just render plain Markdown
   if (!artifactContext) {
     return <Markdown>{content}</Markdown>;
   }
   
-  const { createArtifact, getArtifact } = artifactContext;
+  const { createArtifact, getArtifact, setActiveArtifact, activeArtifact } = artifactContext;
   
   // Parse artifacts and get modified content
-  const { processedContent, artifactElements } = useMemo(() => {
+  const { processedContent, artifactElements, artifacts } = useMemo(() => {
     const { content: modifiedContent, artifacts } = parseArtifactTags(content);
     
     // Store artifacts in the provider
     artifacts.forEach(artifact => {
       createArtifact(artifact);
     });
+    
+    // Remember the first artifact ID
+    if (artifacts.length > 0) {
+      firstArtifactIdRef.current = artifacts[0].id;
+    }
     
     // Split content by placeholders and create elements
     const parts = modifiedContent.split(/(__ARTIFACT_PLACEHOLDER_[^_]+__)/g);
@@ -59,9 +65,17 @@ export function ArtifactMarkdown({ content, className }: ArtifactMarkdownProps) 
     
     return {
       processedContent: modifiedContent,
-      artifactElements: elements
+      artifactElements: elements,
+      artifacts
     };
   }, [content, createArtifact]);
+  
+  // Auto-activate the first artifact when it's created
+  useEffect(() => {
+    if (artifacts.length > 0 && !activeArtifact) {
+      setActiveArtifact(artifacts[0].id);
+    }
+  }, [artifacts, activeArtifact, setActiveArtifact]);
   
   return (
     <div className={className}>

@@ -32,13 +32,16 @@ export function ArtifactCard({ artifact, className }: ArtifactCardProps) {
 
   return (
     <div
-      onClick={() => setActiveArtifact(artifact.id)}
+      onClick={() => setActiveArtifact(isActive ? null : artifact.id)}
       className={cn(
         "inline-flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all",
-        "hover:shadow-md hover:border-blue-400",
-        isActive ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950",
+        "hover:shadow-md",
+        isActive 
+          ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-md hover:border-blue-600" 
+          : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 hover:border-blue-400",
         className
       )}
+      title={isActive ? "Click to close preview" : "Click to preview"}
     >
       <div className="flex items-center gap-2 flex-1">
         {getIcon()}
