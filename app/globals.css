@@ -269,4 +269,17 @@
     /* Use Firefox-specific scrollbar hiding when supported */
     scrollbar-width: none;
   }
+  
+  /* Animation delays for loading dots */
+  .delay-0 {
+    animation-delay: 0ms;
+  }
+  
+  .delay-100 {
+    animation-delay: 100ms;
+  }
+  
+  .delay-200 {
+    animation-delay: 200ms;
+  }
 }

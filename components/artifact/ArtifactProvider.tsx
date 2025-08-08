@@ -99,3 +99,8 @@ export function useArtifact() {
   }
   return context;
 }
+
+// Safe version that returns null if not in provider
+export function useArtifactSafe() {
+  return useContext(ArtifactContext);
+}

@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { Markdown } from '@/components/markdown';
 import { ArtifactCard } from './ArtifactCard';
-import { useArtifact } from './ArtifactProvider';
+import { useArtifactSafe } from './ArtifactProvider';
 import { useArtifactParser } from './hooks/useArtifactParser';
 
 interface ArtifactMarkdownProps {
@@ -12,8 +12,15 @@ interface ArtifactMarkdownProps {
 }
 
 export function ArtifactMarkdown({ content, className }: ArtifactMarkdownProps) {
-  const { createArtifact, getArtifact } = useArtifact();
+  const artifactContext = useArtifactSafe();
   const { parseArtifactTags } = useArtifactParser();
+  
+  // If not in ArtifactProvider, just render plain Markdown
+  if (!artifactContext) {
+    return <Markdown>{content}</Markdown>;
+  }
+  
+  const { createArtifact, getArtifact } = artifactContext;
   
   // Parse artifacts and get modified content
   const { processedContent, artifactElements } = useMemo(() => {
