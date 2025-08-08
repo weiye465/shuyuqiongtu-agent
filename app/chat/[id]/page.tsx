@@ -71,12 +71,12 @@ function ChatPageContent() {
   
   return (
     <>
-      <div className="flex h-full w-full">
-        <div className={`flex-1 ${previewVisible && !isMobile ? 'lg:w-1/2' : 'w-full'}`}>
+      <div className="flex h-full w-full overflow-hidden">
+        <div className={`flex-1 min-w-0 ${previewVisible && !isMobile ? 'lg:w-1/2' : 'w-full'}`}>
           <Chat />
         </div>
         {previewVisible && !isMobile && (
-          <div className="hidden lg:block lg:w-1/2 h-full">
+          <div className="hidden lg:block lg:w-1/2 h-full overflow-hidden min-w-0">
             <ArtifactPreview />
           </div>
         )}

@@ -15,6 +15,7 @@ import { convertToUIMessages } from "@/lib/chat-store";
 import { type Message as DBMessage, type FileInfo } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { useMCP } from "@/lib/context/mcp-context";
+import { useArtifactSafe } from "./artifact/ArtifactProvider";
 
 // Type for chat data from DB
 interface ChatData {
@@ -38,6 +39,10 @@ export default function Chat() {
   
   // Get MCP server data from context
   const { mcpServersForApi } = useMCP();
+  
+  // Get artifact context to check if preview is visible
+  const artifactContext = useArtifactSafe();
+  const hasArtifactPreview = artifactContext?.previewVisible || false;
   
   // Initialize userId
   useEffect(() => {
@@ -178,7 +183,7 @@ export default function Chat() {
   }
   
   return (
-    <div className="h-dvh flex flex-col justify-center w-full max-w-[430px] sm:max-w-3xl mx-auto px-4 sm:px-6 py-3">
+    <div className={`h-dvh flex flex-col justify-center w-full ${hasArtifactPreview ? '' : 'max-w-[430px] sm:max-w-3xl mx-auto'} px-4 sm:px-6 py-3`}>
       {messages.length === 0 && !isLoadingChat ? (
         <div className="max-w-xl mx-auto w-full">
           <ProjectOverview />
