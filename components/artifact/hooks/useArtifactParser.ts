@@ -30,13 +30,28 @@ export function useArtifactParser() {
   };
 
   const parseArtifactTags = (content: string): ParsedContent => {
-    const artifactRegex = /<antArtifact\s+([^>]+)>([\s\S]*?)<\/antArtifact>/g;
+    // Only parse complete artifact tags to avoid issues during streaming
+    const completeArtifactRegex = /<antArtifact\s+([^>]+)>([\s\S]*?)<\/antArtifact>/g;
     const artifacts: Artifact[] = [];
     let modifiedContent = content;
     const placeholders: { original: string; placeholder: string; artifact: Artifact }[] = [];
 
+    // Find the last occurrence of <antArtifact
+    const lastOpenTagIndex = content.lastIndexOf('<antArtifact');
+    const lastCloseTagIndex = content.lastIndexOf('</antArtifact>');
+    
+    // If there's an unclosed artifact tag at the end, remove it temporarily
+    let contentToProcess = content;
+    let pendingContent = '';
+    
+    if (lastOpenTagIndex > lastCloseTagIndex && lastOpenTagIndex !== -1) {
+      // There's an incomplete artifact tag at the end
+      contentToProcess = content.substring(0, lastOpenTagIndex);
+      pendingContent = content.substring(lastOpenTagIndex);
+    }
+
     let match;
-    while ((match = artifactRegex.exec(content)) !== null) {
+    while ((match = completeArtifactRegex.exec(contentToProcess)) !== null) {
       const attributes = parseAttributes(match[1]);
       const artifactContent = match[2].trim();
       
@@ -47,7 +62,8 @@ export function useArtifactParser() {
         title: attributes.title || 'Untitled',
         content: artifactContent,
         language: attributes.language,
-        closed: attributes.closed === 'true',
+        // Default to true (complete) unless explicitly set to false
+        closed: attributes.closed !== 'false',
         createdAt: new Date(),
         updatedAt: new Date(),
         attributes
@@ -64,10 +80,14 @@ export function useArtifactParser() {
       });
     }
 
-    // Replace all artifact tags with placeholders
+    // Replace all artifact tags with placeholders in the processed content
+    modifiedContent = contentToProcess;
     placeholders.forEach(({ original, placeholder }) => {
       modifiedContent = modifiedContent.replace(original, placeholder);
     });
+    
+    // Add back any pending incomplete content
+    modifiedContent = modifiedContent + pendingContent;
 
     return { content: modifiedContent, artifacts };
   };

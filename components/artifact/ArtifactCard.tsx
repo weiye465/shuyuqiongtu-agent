@@ -50,11 +50,8 @@ export function ArtifactCard({ artifact, className }: ArtifactCardProps) {
         </span>
       </div>
       
-      {artifact.closed ? (
-        <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-      ) : (
-        <Loader2 className="w-4 h-4 text-blue-500 animate-spin flex-shrink-0" />
-      )}
+      {/* Always show check mark since artifact is complete when displayed */}
+      <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
     </div>
   );
 }
