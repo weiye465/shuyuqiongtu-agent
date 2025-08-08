@@ -4,6 +4,7 @@ import type { UIMessage as TMessage } from "ai";
 import { memo, useCallback, useEffect, useState } from "react";
 import equal from "fast-deep-equal";
 import { Markdown } from "./markdown";
+import { ArtifactMarkdown } from "./artifact/ArtifactMarkdown";
 import { cn } from "@/lib/utils";
 import {
   ChevronDownIcon,
@@ -182,7 +183,7 @@ const PurePreviewMessage = ({
                           message.role === "user",
                       })}
                     >
-                      <Markdown>{part.text}</Markdown>
+                      <ArtifactMarkdown content={part.text} />
                     </div>
                   </div>
                 );

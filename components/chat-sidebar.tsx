@@ -375,10 +375,10 @@ export function ChatSidebar() {
                 isCollapsed ? "w-8 h-8 p-0" : ""
               )}
               onClick={handleNewChat}
-              title={isCollapsed ? "New Chat" : undefined}
+              title={isCollapsed ? "新建会话" : undefined}
             >
               <PlusCircle className={`${isCollapsed ? "" : "mr-2"} h-4 w-4`} />
-              {!isCollapsed && <span>New Chat</span>}
+              {!isCollapsed && <span>新建会话</span>}
             </Button>
           </motion.div>
 

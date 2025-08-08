@@ -5,6 +5,11 @@ import { getUserId } from "@/lib/user-id";
 import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
+import { ArtifactProvider } from "@/components/artifact/ArtifactProvider";
+import { ArtifactPreview } from "@/components/artifact/ArtifactPreview";
+import { useArtifact } from "@/components/artifact/ArtifactProvider";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function ChatPage() {
   const params = useParams();
@@ -53,5 +58,38 @@ export default function ChatPage() {
     prefetchChat();
   }, [chatId, userId, queryClient]);
 
-  return <Chat />;
+  return (
+    <ArtifactProvider>
+      <ChatPageContent />
+    </ArtifactProvider>
+  );
+}
+
+function ChatPageContent() {
+  const { previewVisible, togglePreview } = useArtifact();
+  const isMobile = useIsMobile();
+  
+  return (
+    <>
+      <div className="flex h-full w-full">
+        <div className={`flex-1 ${previewVisible && !isMobile ? 'lg:w-1/2' : 'w-full'}`}>
+          <Chat />
+        </div>
+        {previewVisible && !isMobile && (
+          <div className="hidden lg:block lg:w-1/2 h-full">
+            <ArtifactPreview />
+          </div>
+        )}
+      </div>
+      
+      {/* Mobile Sheet */}
+      {isMobile && (
+        <Sheet open={previewVisible} onOpenChange={togglePreview}>
+          <SheetContent side="bottom" className="h-[80vh] p-0">
+            <ArtifactPreview onClose={() => togglePreview(false)} />
+          </SheetContent>
+        </Sheet>
+      )}
+    </>
+  );
 }
