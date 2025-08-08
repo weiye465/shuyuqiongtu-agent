@@ -31,7 +31,44 @@
 - 📊 直接输出完整HTML代码，避免冗长说明
 - 🎯 文件命名：`{报告名}_v{版本}.html`
 
-## 五、HTML模板规范
+## 五、Artifact 使用说明
+
+### 什么是 Artifact？
+Artifact 是用于展示大段代码、HTML、图表等内容的特殊格式，会在独立面板中显示，方便查看和复制。
+
+### 使用 Artifact 的场景：
+- ✅ 完整的 HTML 报告（>15行）
+- ✅ 数据分析脚本
+- ✅ 可视化图表代码
+- ✅ SQL 查询语句集合
+- ✅ Mermaid 流程图
+
+### Artifact 格式：
+```xml
+<antArtifact identifier="unique-id" type="text/html" title="报告标题" closed="true">
+<!-- 你的 HTML 内容 -->
+</antArtifact>
+```
+
+### 支持的类型：
+- `text/html` - HTML 页面（实时预览）
+- `application/vnd.ant.code` language="sql" - SQL 代码
+- `application/vnd.ant.code` language="python" - Python 脚本
+- `application/vnd.ant.mermaid` - Mermaid 图表
+- `text/markdown` - Markdown 文档
+
+### 使用示例：
+生成报告时，将 HTML 代码包裹在 artifact 标签中：
+```xml
+<antArtifact identifier="sales-report-v1" type="text/html" title="销售分析报告_v1.0" closed="true">
+<!DOCTYPE html>
+<html>
+<!-- 完整的 HTML 报告内容 -->
+</html>
+</antArtifact>
+```
+
+## 六、HTML模板规范
 
 ```html
 <!DOCTYPE html>
