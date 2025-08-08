@@ -3,7 +3,7 @@
 import { defaultModel, type modelID } from "@/ai/providers";
 import { Message, useChat } from "@ai-sdk/react";
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Textarea } from "./textarea";
+import { TextareaWithUpload } from "./textarea-with-upload";
 import { ProjectOverview } from "./project-overview";
 import { Messages } from "./messages";
 import { toast } from "sonner";
@@ -12,7 +12,7 @@ import { getUserId } from "@/lib/user-id";
 import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { convertToUIMessages } from "@/lib/chat-store";
-import { type Message as DBMessage } from "@/lib/db/schema";
+import { type Message as DBMessage, type FileInfo } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { useMCP } from "@/lib/context/mcp-context";
 
@@ -20,6 +20,7 @@ import { useMCP } from "@/lib/context/mcp-context";
 interface ChatData {
   id: string;
   messages: DBMessage[];
+  files?: FileInfo[];
   createdAt: string;
   updatedAt: string;
 }
@@ -33,6 +34,7 @@ export default function Chat() {
   const [selectedModel, setSelectedModel] = useLocalStorage<modelID>("selectedModel", defaultModel);
   const [userId, setUserId] = useState<string>('');
   const [generatedChatId, setGeneratedChatId] = useState<string>('');
+  const [files, setFiles] = useState<FileInfo[]>([]);
   
   // Get MCP server data from context
   const { mcpServersForApi } = useMCP();
@@ -65,12 +67,17 @@ export default function Chat() {
       if (!response.ok) {
         // For 404, return empty chat data instead of throwing
         if (response.status === 404) {
-          return { id: chatId, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+          return { id: chatId, messages: [], files: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
         }
         throw new Error('Failed to load chat');
       }
       
-      return response.json() as Promise<ChatData>;
+      const data = await response.json() as ChatData;
+      // 设置文件列表
+      if (data.files) {
+        setFiles(data.files);
+      }
+      return data;
     },
     enabled: !!chatId && !!userId,
     retry: 1,
@@ -112,6 +119,7 @@ export default function Chat() {
         mcpServers: mcpServersForApi,
         chatId: chatId || generatedChatId, // Use generated ID if no chatId in URL
         userId,
+        files, // 添加文件信息到请求
       },
       experimental_throttle: 100,
       onFinish: () => {
@@ -160,7 +168,7 @@ export default function Chat() {
             onSubmit={handleFormSubmit}
             className="mt-4 w-full mx-auto"
           >
-            <Textarea
+            <TextareaWithUpload
               selectedModel={selectedModel}
               setSelectedModel={setSelectedModel}
               handleInputChange={handleInputChange}
@@ -168,6 +176,9 @@ export default function Chat() {
               isLoading={isLoading}
               status={status}
               stop={stop}
+              chatId={chatId || generatedChatId}
+              files={files}
+              onFilesChange={setFiles}
             />
           </form>
         </div>
@@ -180,7 +191,7 @@ export default function Chat() {
             onSubmit={handleFormSubmit}
             className="mt-2 w-full mx-auto"
           >
-            <Textarea
+            <TextareaWithUpload
               selectedModel={selectedModel}
               setSelectedModel={setSelectedModel}
               handleInputChange={handleInputChange}
@@ -188,6 +199,9 @@ export default function Chat() {
               isLoading={isLoading}
               status={status}
               stop={stop}
+              chatId={chatId || generatedChatId}
+              files={files}
+              onFilesChange={setFiles}
             />
           </form>
         </>

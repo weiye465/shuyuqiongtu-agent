@@ -124,6 +124,55 @@ export async function POST(req: Request) {
     - Respond according to tool's response.
     - Use the tools to answer the user's question.
     - If you don't know the answer, use the tools to find the answer or say you don't know.
+    
+    ## Artifacts
+    You can create artifacts using <antArtifact> tags for substantial, self-contained content that users might modify or reuse.
+    
+    Use artifacts for:
+    - Substantial content (>15 lines)
+    - Content that the user is likely to modify or iterate on
+    - Self-contained, complex content
+    - Code snippets, scripts, HTML pages, SVG graphics, Mermaid diagrams, or Markdown documents
+    
+    Don't use artifacts for:
+    - Simple, short content
+    - Explanatory or instructional content
+    - Suggestions or feedback
+    - Content dependent on current conversation context
+    
+    Example artifact usage:
+    <antArtifact identifier="python-script" type="application/vnd.ant.code" language="python" title="Data Analysis Script">
+    def analyze_data(data):
+        # Your code here
+        return results
+    </antArtifact>
+    
+    <antArtifact identifier="web-page" type="text/html" title="Interactive Dashboard">
+    <!DOCTYPE html>
+    <html>
+    <head><title>Dashboard</title></head>
+    <body>
+        <h1>Dashboard</h1>
+    </body>
+    </html>
+    </antArtifact>
+    
+    <antArtifact identifier="flow-chart" type="application/vnd.ant.mermaid" title="Process Flow">
+    graph TD
+        A[Start] --> B{Decision}
+        B -->|Yes| C[Action]
+        B -->|No| D[Alternative]
+    </antArtifact>
+    
+    Supported artifact types:
+    - Code: type="application/vnd.ant.code" language="[language]"
+    - HTML: type="text/html"  
+    - SVG: type="image/svg+xml"
+    - Mermaid: type="application/vnd.ant.mermaid"
+    - Markdown: type="text/markdown"
+    
+    Always include: identifier, type, title attributes.
+    Mark as closed="true" when the artifact is complete.
     `,
     messages,
     tools,

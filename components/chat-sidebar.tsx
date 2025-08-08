@@ -186,7 +186,7 @@ export function ChatSidebar() {
             </div>
             {!isCollapsed && (
               <div className="font-semibold text-lg text-foreground/90">
-                MCP
+                数驭穹图
               </div>
             )}
           </div>
@@ -310,7 +310,8 @@ export function ChatSidebar() {
           </div>
         </div>
 
-        <SidebarGroup className="flex-shrink-0">
+        {/* MCP Servers Section - 隐藏 */}
+        {/* <SidebarGroup className="flex-shrink-0">
           <SidebarGroupLabel
             className={cn(
               "px-4 pt-0 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
@@ -359,7 +360,7 @@ export function ChatSidebar() {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup>
+        </SidebarGroup> */}
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-border/40 mt-auto">
@@ -442,7 +443,8 @@ export function ChatSidebar() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuGroup>
+              {/* 下拉菜单项 - 全部隐藏 */}
+              {/* <DropdownMenuGroup>
                 <DropdownMenuItem
                   onSelect={(e) => {
                     e.preventDefault();
@@ -453,27 +455,9 @@ export function ChatSidebar() {
                   <Copy className="mr-2 h-4 w-4 hover:text-sidebar-accent" />
                   Copy User ID
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    setEditUserIdOpen(true);
-                  }}
-                >
-                  <Pencil className="mr-2 h-4 w-4 hover:text-sidebar-accent" />
-                  Edit User ID
-                </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    setMcpSettingsOpen(true);
-                  }}
-                >
-                  <Settings className="mr-2 h-4 w-4 hover:text-sidebar-accent" />
-                  MCP Settings
-                </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={(e) => {
                     e.preventDefault();
@@ -501,7 +485,7 @@ export function ChatSidebar() {
                     <ThemeToggle className="h-6 w-6" />
                   </div>
                 </DropdownMenuItem>
-              </DropdownMenuGroup>
+              </DropdownMenuGroup> */}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

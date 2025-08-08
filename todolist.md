@@ -154,32 +154,48 @@ export async function POST(req: Request) {
 - [ ] 验证数据库更新
 - [ ] 验证文件存储
 
-### 1.5 前端上传组件
+### 1.5 前端上传组件（集成到输入框）
 **输入**：用户选择的文件  
-**输出**：上传进度和结果反馈  
+**输出**：上传进度、文件胶囊展示和结果反馈  
 **实现**：
 ```tsx
-// components/file-upload.tsx
-export function FileUpload({ chatId, onUploadComplete }) {
-  const [uploading, setUploading] = useState(false);
-  
-  const handleUpload = async (file: File) => {
-    // 显示上传进度
-    // 调用上传API
-    // 更新UI状态
-  };
-  
-  return (
-    <div className="border-2 border-dashed rounded-lg p-4">
-      <input type="file" accept=".csv,.xlsx,.xls" onChange={handleUpload} />
-    </div>
-  );
-}
+// components/file-upload.tsx - 文件上传核心组件
+- 文件验证（类型、大小）
+- 上传到R2存储
+- 进度条显示
+- 文件胶囊展示（带删除功能）
+
+// components/textarea-with-upload.tsx - 集成输入框
+- 整合文件上传按钮到输入框工具栏
+- 文件胶囊显示在输入框上方
+- 支持文件+文本混合发送
+```
+**特性**：
+- 📎 文件上传按钮集成在输入框左下角
+- 💊 文件胶囊展示（蓝色圆角，显示文件名、大小、删除按钮）
+- 📊 上传进度条
+- ⚠️ 错误提示
+- 🎯 文件类型限制（仅CSV/Excel）
+- 📏 文件大小限制（10MB）
+
+**使用方式**：
+```tsx
+// 在chat.tsx中使用
+const [files, setFiles] = useState<FileInfo[]>([]);
+
+<TextareaWithUpload
+  chatId={chatId}
+  files={files}
+  onFilesChange={setFiles}
+  // ... 其他props
+/>
 ```
 **测试**：
-- [ ] 测试拖拽上传
-- [ ] 测试点击上传
+- [ ] 测试文件选择上传
+- [ ] 测试文件胶囊展示和删除
 - [ ] 测试上传进度显示
+- [ ] 测试错误提示（错误类型、超大文件）
+- [ ] 测试文件+文本混合发送
 
 ---
 

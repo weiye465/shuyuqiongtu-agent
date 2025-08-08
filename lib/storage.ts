@@ -16,13 +16,26 @@ export class Storage {
   private s3: S3Client;
 
   constructor(config?: StorageConfig) {
+    const endpoint = config?.endpoint || process.env.STORAGE_ENDPOINT || "";
+    const region = config?.region || process.env.STORAGE_REGION || "auto";
+    const accessKeyId = config?.accessKey || process.env.STORAGE_ACCESS_KEY || "";
+    const secretAccessKey = config?.secretKey || process.env.STORAGE_SECRET_KEY || "";
+    
+    console.log('🔧 Storage config:', {
+      endpoint,
+      region,
+      hasAccessKey: !!accessKeyId,
+      hasSecretKey: !!secretAccessKey,
+      bucket: process.env.STORAGE_BUCKET,
+      domain: process.env.STORAGE_DOMAIN
+    });
+    
     this.s3 = new S3Client({
-      endpoint: config?.endpoint || process.env.STORAGE_ENDPOINT || "",
-      region: config?.region || process.env.STORAGE_REGION || "auto",
+      endpoint,
+      region,
       credentials: {
-        accessKeyId: config?.accessKey || process.env.STORAGE_ACCESS_KEY || "",
-        secretAccessKey:
-          config?.secretKey || process.env.STORAGE_SECRET_KEY || "",
+        accessKeyId,
+        secretAccessKey,
       },
     });
   }
@@ -42,13 +55,24 @@ export class Storage {
     onProgress?: (progress: number) => void;
     disposition?: "inline" | "attachment";
   }) {
+    console.log('📤 uploadFile called with:', {
+      key,
+      contentType,
+      bucket,
+      bodySize: body.length,
+      disposition
+    });
+    
     if (!bucket) {
       bucket = process.env.STORAGE_BUCKET || "";
     }
 
     if (!bucket) {
+      console.error('❌ Bucket is required but not found');
       throw new Error("Bucket is required");
     }
+    
+    console.log('🪣 Using bucket:', bucket);
 
     const upload = new Upload({
       client: this.s3,
@@ -65,20 +89,27 @@ export class Storage {
       upload.on("httpUploadProgress", (progress) => {
         const percentage =
           ((progress.loaded || 0) / (progress.total || 1)) * 100;
+        console.log(`📊 Upload progress event: ${percentage.toFixed(1)}%`);
         onProgress(percentage);
       });
     }
 
+    console.log('⏳ Starting upload to R2...');
     const res = await upload.done();
+    console.log('✅ Upload complete, response:', res);
 
+    const resultUrl = process.env.STORAGE_DOMAIN
+      ? `${process.env.STORAGE_DOMAIN}/${res.Key}`
+      : res.Location;
+    
+    console.log('🔗 Final URL:', resultUrl);
+    
     return {
       location: res.Location,
       bucket: res.Bucket,
       key: res.Key,
       filename: res.Key?.split("/").pop(),
-      url: process.env.STORAGE_DOMAIN
-        ? `${process.env.STORAGE_DOMAIN}/${res.Key}`
-        : res.Location,
+      url: resultUrl,
     };
   }
 

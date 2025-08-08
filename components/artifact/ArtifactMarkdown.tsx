@@ -1,0 +1,64 @@
+'use client';
+
+import { useEffect, useMemo } from 'react';
+import { Markdown } from '@/components/markdown';
+import { ArtifactCard } from './ArtifactCard';
+import { useArtifact } from './ArtifactProvider';
+import { useArtifactParser } from './hooks/useArtifactParser';
+
+interface ArtifactMarkdownProps {
+  content: string;
+  className?: string;
+}
+
+export function ArtifactMarkdown({ content, className }: ArtifactMarkdownProps) {
+  const { createArtifact, getArtifact } = useArtifact();
+  const { parseArtifactTags } = useArtifactParser();
+  
+  // Parse artifacts and get modified content
+  const { processedContent, artifactElements } = useMemo(() => {
+    const { content: modifiedContent, artifacts } = parseArtifactTags(content);
+    
+    // Store artifacts in the provider
+    artifacts.forEach(artifact => {
+      createArtifact(artifact);
+    });
+    
+    // Split content by placeholders and create elements
+    const parts = modifiedContent.split(/(__ARTIFACT_PLACEHOLDER_[^_]+__)/g);
+    const elements: (string | JSX.Element)[] = [];
+    
+    parts.forEach((part, index) => {
+      if (part.startsWith('__ARTIFACT_PLACEHOLDER_')) {
+        const artifactId = part.replace(/__ARTIFACT_PLACEHOLDER_|__/g, '');
+        const artifact = artifacts.find(a => a.id === artifactId);
+        if (artifact) {
+          elements.push(
+            <div key={`artifact-${index}`} className="my-3">
+              <ArtifactCard artifact={artifact} />
+            </div>
+          );
+        } else {
+          elements.push(part);
+        }
+      } else if (part.trim()) {
+        elements.push(
+          <div key={`content-${index}`}>
+            <Markdown>{part}</Markdown>
+          </div>
+        );
+      }
+    });
+    
+    return {
+      processedContent: modifiedContent,
+      artifactElements: elements
+    };
+  }, [content, createArtifact]);
+  
+  return (
+    <div className={className}>
+      {artifactElements}
+    </div>
+  );
+}
