@@ -14,14 +14,14 @@ export default function CodeRenderer({ artifact }: CodeRendererProps) {
   const codeStyle = theme === 'light' || theme === 'sunset' ? oneLight : tomorrow;
   
   return (
-    <div className="h-full overflow-auto">
+    <div className="w-full h-[600px] overflow-auto">
       <SyntaxHighlighter
         language={artifact.language || 'text'}
         style={codeStyle}
         customStyle={{
           margin: 0,
           padding: '1rem',
-          height: '100%',
+          minHeight: '100%',
           fontSize: '0.875rem',
           backgroundColor: 'transparent'
         }}

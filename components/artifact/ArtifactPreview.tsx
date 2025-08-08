@@ -65,9 +65,9 @@ export function ArtifactPreview({ className, onClose }: ArtifactPreviewProps) {
   };
   
   return (
-    <div className={cn("flex flex-col h-full bg-background border-l", className)}>
+    <div className={cn("flex flex-col h-full bg-background border-l overflow-hidden", className)}>
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b bg-muted/30">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold text-sm truncate max-w-[200px]">
             {activeArtifact.title}
@@ -125,10 +125,10 @@ export function ArtifactPreview({ className, onClose }: ArtifactPreviewProps) {
         </div>
       </div>
       
-      {/* Content */}
-      <div className="flex-1 overflow-hidden">
+      {/* Content - Fixed height container */}
+      <div className="flex-1 min-h-0">
         <Suspense fallback={
-          <div className="w-full h-full flex items-center justify-center">
+          <div className="w-full h-[600px] flex items-center justify-center bg-muted/10">
             <div className="text-muted-foreground">Loading...</div>
           </div>
         }>

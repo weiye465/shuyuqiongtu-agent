@@ -32,11 +32,13 @@ export default function HtmlRenderer({ artifact }: HtmlRendererProps) {
   }, [artifact.content]);
   
   return (
-    <iframe
-      ref={iframeRef}
-      className="w-full h-full border-0 bg-white"
-      sandbox="allow-scripts"
-      title={artifact.title}
-    />
+    <div className="w-full h-[600px] overflow-hidden">
+      <iframe
+        ref={iframeRef}
+        className="w-full h-full border-0 bg-white"
+        sandbox="allow-scripts"
+        title={artifact.title}
+      />
+    </div>
   );
 }

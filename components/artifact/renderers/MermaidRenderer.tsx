@@ -70,10 +70,12 @@ export default function MermaidRenderer({ artifact }: MermaidRendererProps) {
   
   if (error) {
     return (
-      <div className="w-full h-full flex items-center justify-center p-8">
-        <div className="text-center">
-          <p className="text-red-500 mb-2">Error rendering diagram</p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
+      <div className="w-full h-[600px] overflow-auto">
+        <div className="w-full h-full flex items-center justify-center p-8">
+          <div className="text-center">
+            <p className="text-red-500 mb-2">Error rendering diagram</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
+          </div>
         </div>
       </div>
     );
@@ -81,15 +83,19 @@ export default function MermaidRenderer({ artifact }: MermaidRendererProps) {
   
   if (loading) {
     return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="text-gray-500">Loading diagram...</div>
+      <div className="w-full h-[600px] overflow-auto">
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="text-gray-500">Loading diagram...</div>
+        </div>
       </div>
     );
   }
   
   return (
-    <div className="w-full h-full flex items-center justify-center p-8 overflow-auto">
-      <div ref={containerRef} className="mermaid-container" />
+    <div className="w-full h-[600px] overflow-auto">
+      <div className="w-full h-full flex items-center justify-center p-8">
+        <div ref={containerRef} className="mermaid-container" />
+      </div>
     </div>
   );
 }

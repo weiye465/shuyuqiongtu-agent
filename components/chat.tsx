@@ -159,6 +159,24 @@ export default function Chat() {
 
   const isLoading = status === "streaming" || status === "submitted" || isLoadingChat;
 
+  // 显示会话加载状态
+  if (isLoadingChat && chatId) {
+    return (
+      <div className="h-dvh flex flex-col justify-center items-center w-full max-w-[430px] sm:max-w-3xl mx-auto px-4 sm:px-6 py-3">
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex items-center gap-1.5 px-6 py-4 rounded-2xl bg-muted/50 border border-muted-foreground/10">
+            <span className="text-base text-muted-foreground">加载会话中</span>
+            <span className="inline-flex">
+              <span className="animate-bounce delay-0 text-muted-foreground">.</span>
+              <span className="animate-bounce delay-100 text-muted-foreground">.</span>
+              <span className="animate-bounce delay-200 text-muted-foreground">.</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="h-dvh flex flex-col justify-center w-full max-w-[430px] sm:max-w-3xl mx-auto px-4 sm:px-6 py-3">
       {messages.length === 0 && !isLoadingChat ? (
