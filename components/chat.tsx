@@ -164,8 +164,8 @@ export default function Chat() {
 
   const isLoading = status === "streaming" || status === "submitted" || isLoadingChat;
 
-  // 显示会话加载状态
-  if (isLoadingChat && chatId) {
+  // 显示会话加载状态（只在加载已存在的会话时显示，新会话不显示）
+  if (isLoadingChat && chatId && messages.length === 0) {
     return (
       <div className="h-dvh flex flex-col justify-center items-center w-full max-w-[430px] sm:max-w-3xl mx-auto px-4 sm:px-6 py-3">
         <div className="flex flex-col items-center gap-4">

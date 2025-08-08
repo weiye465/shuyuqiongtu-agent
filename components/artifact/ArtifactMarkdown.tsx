@@ -27,11 +27,6 @@ export function ArtifactMarkdown({ content, className }: ArtifactMarkdownProps) 
   const { processedContent, artifactElements, artifacts } = useMemo(() => {
     const { content: modifiedContent, artifacts } = parseArtifactTags(content);
     
-    // Store artifacts in the provider
-    artifacts.forEach(artifact => {
-      createArtifact(artifact);
-    });
-    
     // Remember the first artifact ID
     if (artifacts.length > 0) {
       firstArtifactIdRef.current = artifacts[0].id;
@@ -68,7 +63,14 @@ export function ArtifactMarkdown({ content, className }: ArtifactMarkdownProps) 
       artifactElements: elements,
       artifacts
     };
-  }, [content, createArtifact]);
+  }, [content]);
+  
+  // Store artifacts in the provider
+  useEffect(() => {
+    artifacts.forEach(artifact => {
+      createArtifact(artifact);
+    });
+  }, [artifacts, createArtifact]);
   
   // Auto-activate the first artifact when it's created (only if user hasn't interacted)
   useEffect(() => {
