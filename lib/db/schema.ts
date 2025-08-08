@@ -8,10 +8,21 @@ export enum MessageRole {
   TOOL = "tool"
 }
 
+// File info type
+export type FileInfo = {
+  id: string;
+  name: string;
+  url: string;
+  size: number;
+  type: 'csv' | 'excel';
+  uploadedAt: number; // 时间戳（毫秒）
+};
+
 export const chats = pgTable('chats', {
   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
   userId: text('user_id').notNull(),
   title: text('title').notNull().default('New Chat'),
+  files: json('files').$type<FileInfo[]>().default([]).notNull(), // 文件列表
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
