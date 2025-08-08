@@ -1,5 +1,6 @@
 import { createGroq } from "@ai-sdk/groq";
 import { createXai } from "@ai-sdk/xai";
+import { createOpenAI } from "@ai-sdk/openai";
 
 import {
   customProvider,
@@ -21,12 +22,29 @@ const middleware = extractReasoningMiddleware({
 
 // Helper to get API keys from environment variables first, then localStorage
 const getApiKey = (key: string): string | undefined => {
-  // Check for environment variables first
+  // Default API Key for OpenAI (Custom Claude endpoint)
+  if (key === 'OPENAI_API_KEY') {
+    // Check for environment variables first
+    if (process.env[key]) {
+      return process.env[key] || undefined;
+    }
+    
+    // Fall back to localStorage if available
+    if (typeof window !== 'undefined') {
+      const storedKey = window.localStorage.getItem(key);
+      // Return stored key if exists, otherwise use default
+      return storedKey || 'sk-3xe3j73Get55NG7k28E53e8a6bE44aAaAb82C1021c48D137';
+    }
+    
+    // Return default key if no localStorage available
+    return 'sk-3xe3j73Get55NG7k28E53e8a6bE44aAaAb82C1021c48D137';
+  }
+  
+  // For other keys, use normal logic
   if (process.env[key]) {
     return process.env[key] || undefined;
   }
 
-  // Fall back to localStorage if available
   if (typeof window !== 'undefined') {
     return window.localStorage.getItem(key) || undefined;
   }
@@ -42,6 +60,12 @@ const xaiClient = createXai({
   apiKey: getApiKey('XAI_API_KEY'),
 });
 
+// 自定义 OpenAI 兼容客户端（使用固定的 apiyi.com endpoint）
+const customOpenAIClient = createOpenAI({
+  apiKey: getApiKey('OPENAI_API_KEY'),
+  baseURL: 'https://api.apiyi.com/v1'
+});
+
 const languageModels = {
   "qwen3-32b": wrapLanguageModel(
     {
@@ -51,7 +75,8 @@ const languageModels = {
   ),
   "grok-3-mini": xaiClient("grok-3-mini-latest"),
   "kimi-k2": groqClient('moonshotai/kimi-k2-instruct'),
-  "llama4": groqClient('meta-llama/llama-4-scout-17b-16e-instruct')
+  "llama4": groqClient('meta-llama/llama-4-scout-17b-16e-instruct'),
+  "claude-sonnet-4": customOpenAIClient('claude-sonnet-4-20250514')
 };
 
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
@@ -82,6 +107,13 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "Latest version of Meta's Llama 4 with good balance of capabilities.",
     apiVersion: "llama-4-scout-17b-16e-instruct",
     capabilities: ["Balanced", "Efficient", "Agentic"]
+  },
+  "claude-sonnet-4": {
+    provider: "Custom API",
+    name: "Claude Sonnet 4",
+    description: "Anthropic's Claude Sonnet model - balanced performance with strong reasoning and faster response times.",
+    apiVersion: "claude-sonnet-4-20250514",
+    capabilities: ["Balanced Performance", "Fast Response", "Strong Reasoning", "Efficient"]
   }
 };
 

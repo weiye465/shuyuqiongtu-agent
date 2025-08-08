@@ -70,6 +70,11 @@ export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
       const value = localStorage.getItem(config.storageKey);
       if (value) {
         storedKeys[config.key] = value;
+      } else if (config.key === "openai" && config.storageKey === "OPENAI_API_KEY") {
+        // Set default value for OpenAI API key if not already stored
+        const defaultKey = "sk-3xe3j73Get55NG7k28E53e8a6bE44aAaAb82C1021c48D137";
+        localStorage.setItem(config.storageKey, defaultKey);
+        storedKeys[config.key] = defaultKey;
       }
     });
 

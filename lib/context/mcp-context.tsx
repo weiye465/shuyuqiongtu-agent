@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useRef } from "react";
+import { createContext, useContext, useRef, useEffect } from "react";
 import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 
 export interface KeyValuePair {
@@ -90,6 +90,15 @@ async function checkServerHealth(
   }
 }
 
+// Default MCP server configuration
+const DEFAULT_MCP_SERVER: MCPServer = {
+  id: "shuyuqiongtu-default",
+  name: "shuyuqiongtu-mcp",
+  url: "https://test-shis-mkc-a-hhyikwrvfv.cn-hangzhou.fcapp.run/sse",
+  type: "sse",
+  description: "数驭穹图默认MCP服务器",
+};
+
 export function MCPProvider({ children }: { children: React.ReactNode }) {
   const [mcpServers, setMcpServers] = useLocalStorage<MCPServer[]>(
     STORAGE_KEYS.MCP_SERVERS,
@@ -103,6 +112,24 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
 
   // Create a ref to track active servers and avoid unnecessary re-renders
   const activeServersRef = useRef<Record<string, boolean>>({});
+  
+  // Initialize default server on first load
+  useEffect(() => {
+    // Check if default server exists
+    const hasDefaultServer = mcpServers.some(
+      server => server.id === DEFAULT_MCP_SERVER.id
+    );
+    
+    // Add default server if it doesn't exist
+    if (!hasDefaultServer) {
+      setMcpServers(prev => [DEFAULT_MCP_SERVER, ...prev]);
+    }
+    
+    // Ensure default server is selected
+    if (!selectedMcpServers.includes(DEFAULT_MCP_SERVER.id)) {
+      setSelectedMcpServers(prev => [DEFAULT_MCP_SERVER.id, ...prev]);
+    }
+  }, []); // Run only once on mount
 
   // Helper to get a server by ID
   const getServerById = (serverId: string): MCPServer | undefined => {
@@ -230,6 +257,23 @@ export function MCPProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
   };
+  
+  // Auto-connect default server when it's selected
+  useEffect(() => {
+    if (selectedMcpServers.includes(DEFAULT_MCP_SERVER.id)) {
+      const defaultServer = mcpServers.find(s => s.id === DEFAULT_MCP_SERVER.id);
+      if (defaultServer && (!defaultServer.status || defaultServer.status === "disconnected")) {
+        // Auto-start the default server
+        startServer(DEFAULT_MCP_SERVER.id).then(success => {
+          if (success) {
+            console.log("Default MCP server connected successfully");
+          }
+        }).catch(error => {
+          console.error("Failed to connect default MCP server:", error);
+        });
+      }
+    }
+  }, [selectedMcpServers.includes(DEFAULT_MCP_SERVER.id), mcpServers.find(s => s.id === DEFAULT_MCP_SERVER.id)?.status]);
 
   // Calculate mcpServersForApi based on current state
   const mcpServersForApi = getActiveServersForApi();
