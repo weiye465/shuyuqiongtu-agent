@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { newStorage } from '@/lib/storage';
+import { checkBotId } from "botid/server";
 
 export async function POST(request: NextRequest) {
   console.log('📤 Upload API called');
+  
+  // Check bot protection
+  const { isBot, isGoodBot } = await checkBotId();
+  
+  if (isBot && !isGoodBot) {
+    return NextResponse.json(
+      { error: "Bot is not allowed to access this endpoint" },
+      { status: 401 }
+    );
+  }
   
   try {
     const formData = await request.formData();

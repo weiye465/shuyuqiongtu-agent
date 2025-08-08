@@ -49,6 +49,10 @@ export default function RootLayout({
             {
               path: "/api/chat",
               method: "POST",
+            },
+            {
+              path: "/api/upload",
+              method: "POST",
             }
           ]}
         />

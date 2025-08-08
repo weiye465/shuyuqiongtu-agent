@@ -24,6 +24,7 @@ type SaveChatParams = {
   userId: string;
   messages?: any[];
   title?: string;
+  files?: any[]; // FileInfo[]
 };
 
 type ChatWithMessages = Chat & {
@@ -110,7 +111,7 @@ export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage
   }));
 }
 
-export async function saveChat({ id, userId, messages: aiMessages, title }: SaveChatParams) {
+export async function saveChat({ id, userId, messages: aiMessages, title, files }: SaveChatParams) {
   // Generate a new ID if one wasn't provided
   const chatId = id || nanoid();
 
@@ -206,6 +207,7 @@ export async function saveChat({ id, userId, messages: aiMessages, title }: Save
       .update(chats)
       .set({
         title: chatTitle,
+        files: files || existingChat.files || [],
         updatedAt: new Date()
       })
       .where(and(
@@ -218,6 +220,7 @@ export async function saveChat({ id, userId, messages: aiMessages, title }: Save
       id: chatId,
       userId,
       title: chatTitle,
+      files: files || [],
       createdAt: new Date(),
       updatedAt: new Date()
     });
