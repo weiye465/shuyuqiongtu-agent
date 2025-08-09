@@ -19,6 +19,7 @@ export async function POST(req: Request) {
     userId,
     mcpServers = [],
     files = [],
+    filterTools = false, // 新增：是否过滤工具调用
   }: {
     messages: UIMessage[];
     chatId?: string;
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
     userId: string;
     mcpServers?: MCPServerConfig[];
     files?: any[]; // FileInfo[]
+    filterTools?: boolean; // 是否过滤工具调用和结果
   } = await req.json();
 
   // 暂时禁用 BotId 检查以调试文件上传问题
@@ -102,8 +104,42 @@ export async function POST(req: Request) {
   console.log("parts", messages.map(m => m.parts.map(p => p)));
   console.log("files", files);
 
+  // 过滤掉工具调用和工具结果的消息部分
+  const filterToolParts = (messages: UIMessage[]): UIMessage[] => {
+    return messages.map(msg => {
+      // 只过滤 parts 中的工具相关内容
+      const filteredParts = msg.parts.filter(part => {
+        // 保留文本部分，过滤工具调用和工具结果
+        return part.type === 'text';
+      });
+      
+      // 如果是工具消息，完全过滤掉
+      if (msg.role === 'tool') {
+        return null;
+      }
+      
+      // 创建过滤后的消息对象
+      const filteredMsg: any = {
+        ...msg,
+        parts: filteredParts,
+        // 更新 content 字段为过滤后的文本内容
+        content: filteredParts
+          .filter(p => p.type === 'text' && p.text)
+          .map(p => p.text)
+          .join('\n')
+      };
+      
+      // 移除 tool_calls 字段（如果存在）
+      delete filteredMsg.tool_calls;
+      delete filteredMsg.toolCalls;
+      
+      return filteredMsg;
+    }).filter(Boolean) as UIMessage[]; // 移除 null 值
+  };
+  
   // 如果有文件，将文件信息添加到最后一条用户消息中
-  let processedMessages = [...messages];
+  // 根据 filterTools 参数决定是否过滤工具调用
+  let processedMessages = filterTools ? filterToolParts(messages) : [...messages];
   
   console.log("=== File Processing Debug ===");
   console.log("Files received:", JSON.stringify(files, null, 2));
