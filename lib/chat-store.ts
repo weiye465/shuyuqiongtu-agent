@@ -100,15 +100,24 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
   });
 }
 
-// Convert DB messages to UI format
+// Convert DB messages to UI format - 过滤掉工具调用信息
 export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage> {
-  return dbMessages.map((message) => ({
-    id: message.id,
-    parts: message.parts as MessagePart[],
-    role: message.role as string,
-    content: getTextContent(message), // For backward compatibility
-    createdAt: message.createdAt,
-  }));
+  return dbMessages.map((message) => {
+    // 过滤 parts 中的工具调用相关内容
+    const filteredParts = (message.parts as MessagePart[]).filter(part => {
+      // 过滤掉所有工具相关的类型，防止token爆炸
+      const toolTypes = ['tool-call', 'tool-invocation', 'tool-result', 'step-start'];
+      return !toolTypes.includes(part.type);
+    });
+    
+    return {
+      id: message.id,
+      parts: filteredParts,
+      role: message.role as string,
+      content: getTextContent(message), // For backward compatibility
+      createdAt: message.createdAt,
+    };
+  });
 }
 
 export async function saveChat({ id, userId, messages: aiMessages, title, files }: SaveChatParams) {

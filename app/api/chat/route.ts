@@ -531,7 +531,6 @@ export async function POST(req: Request) {
   return result.toDataStreamResponse({
     sendReasoning: true,
     // 减少发送的元数据
-    includeToolResults: false, // 不包含工具结果详情
     headers: {
       'X-Chat-ID': id
     },
