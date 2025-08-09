@@ -290,10 +290,15 @@ export async function POST(req: Request) {
 5. 最常用\`execute_sql\` - SQL查询，优先使用聚合和筛选，避免token消耗爆炸，只获取必要的信息，默认limit 100
 4. \`generate_analysis_report\` - 返回统计信息，basic，statistical，correlation
 
+### 🔴 关键规则：MCP服务是无状态的
+**由于MCP服务是无状态的，每一轮新的问答都必须重新执行 \`import_file\`！**
+- 每次新对话开始时，之前导入的数据都不存在
+- 必须在每轮对话开始时重新导入文件
+- 不要假设之前的表还存在
+
 ### ⚠️ 重要：避免循环调用
 1. 合理使用工具调用，一次对话最多可以使用20次工具
 2. **简化查询**：优先使用聚合查询，避免返回大量原始数据
-3. **表不存在错误**：只有在首次遇到 "no such table" 错误时才执行 import_file
 
 ## 四、工作流程 - 严格按顺序执行
 
@@ -347,6 +352,26 @@ export async function POST(req: Request) {
 
 ## 六、HTML模板规范
 
+### 🎨 报告要求：完整华丽 + 至少10个图表
+**每个HTML报告必须包含：**
+- 📊 **至少10个不同类型的图表**（柱状图、折线图、饼图、雷达图、散点图、热力图、地图、仪表盘等）
+- 🎯 **完整的数据分析视角**（趋势、对比、占比、分布、相关性等）
+- ✨ **华丽的视觉效果**（渐变色、动画、阴影、悬浮效果）
+- 📱 **响应式布局**（适配移动端和桌面端）
+- 🎨 **专业配色方案**（使用现代化的色彩搭配）
+
+### 图表类型建议：
+1. **趋势分析**：折线图、面积图
+2. **对比分析**：柱状图、分组柱状图、瀑布图
+3. **占比分析**：饼图、环形图、玫瑰图
+4. **分布分析**：散点图、箱线图、直方图
+5. **相关性分析**：热力图、散点矩阵
+6. **综合分析**：雷达图、仪表盘、组合图
+7. **地理分析**：地图、热力地图（如适用）
+8. **排名分析**：条形图、漏斗图
+9. **时间序列**：K线图、日历图
+10. **特殊图表**：词云、桑基图、树图
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -363,13 +388,16 @@ export async function POST(req: Request) {
         <!-- 指标展示 -->
     </div>
   
-    <!-- 图表区域 -->
-    <div id="chart" style="width:100%;height:400px;"></div>
+    <!-- 图表区域 - 至少10个图表 -->
+    <div id="chart1" style="width:100%;height:400px;"></div>
+    <div id="chart2" style="width:100%;height:400px;"></div>
+    <!-- ... 更多图表 ... -->
   
     <script>
-        // ECharts初始化
-        var chart = echarts.init(document.getElementById('chart'));
-        chart.setOption({/* 图表配置 */});
+        // ECharts初始化 - 至少10个图表
+        var chart1 = echarts.init(document.getElementById('chart1'));
+        chart1.setOption({/* 图表配置 */});
+        // ... 更多图表配置 ...
     </script>
 </body>
 </html>
@@ -379,7 +407,7 @@ export async function POST(req: Request) {
 1. **简短确认**（1句话）
 2. **HTML代码**（必须完整，一次性输出）
    - 单个Artifact包含全部代码
-   - 从`<!DOCTYPE html>`到`</html>`完整无缺
+   - 从\`<!DOCTYPE html>\`到\`</html>\`完整无缺
    - 包含所有数据和配置，确保可直接运行
 3. **分析总结**（1句关键洞察）
 
@@ -388,8 +416,10 @@ export async function POST(req: Request) {
 ✅ **代码优先** - 直接生成完整专业华丽的HTML，少说多做
 ✅ **数据准确** - 必须基于mcp返回数据制作报告
 ✅ **完整输出** - HTML必须一次性完整生成，绝不截断
+✅ **图表丰富** - 每个报告至少包含10个不同类型的可视化图表
+✅ **视觉华丽** - 使用渐变、动画、阴影等现代化设计元素
 
-**使命：快速将数据转化为完整的精美HTML报告！**
+**使命：快速将数据转化为完整华丽的HTML报告（至少10个图表）！**
 
 ### 🚨 最后提醒
 如果HTML代码较长，不要担心长度问题，必须输出完整代码。宁愿简化功能，也要确保HTML完整可运行。
