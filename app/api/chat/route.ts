@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     userId,
     mcpServers = [],
     files = [],
-    filterTools = false, // 新增：是否过滤工具调用
+    filterTools = true, // 默认过滤工具调用和返回值，减少token消耗
   }: {
     messages: UIMessage[];
     chatId?: string;
@@ -103,14 +103,37 @@ export async function POST(req: Request) {
   console.log("messages", messages);
   console.log("parts", messages.map(m => m.parts.map(p => p)));
   console.log("files", files);
+  
+  // 调试：统计工具调用信息
+  if (filterTools) {
+    const toolStats = messages.reduce((acc, msg) => {
+      msg.parts.forEach(part => {
+        if (['tool-call', 'tool-invocation', 'tool-result'].includes(part.type)) {
+          acc.toolParts++;
+          if (part.type === 'tool-invocation' && part.toolInvocation?.result) {
+            const resultStr = JSON.stringify(part.toolInvocation.result);
+            acc.totalChars += resultStr.length;
+          }
+        }
+      });
+      return acc;
+    }, { toolParts: 0, totalChars: 0 });
+    
+    console.log(`=== 过滤前统计 ===`);
+    console.log(`工具相关parts数量: ${toolStats.toolParts}`);
+    console.log(`工具结果总字符数: ${toolStats.totalChars}`);
+    console.log(`预计节省tokens: ~${Math.round(toolStats.totalChars / 4)}`);
+  }
 
   // 过滤掉工具调用和工具结果的消息部分
   const filterToolParts = (messages: UIMessage[]): UIMessage[] => {
     return messages.map(msg => {
       // 只过滤 parts 中的工具相关内容
       const filteredParts = msg.parts.filter(part => {
-        // 保留文本部分，过滤工具调用和工具结果
-        return part.type === 'text';
+        // 只保留文本和其他非工具相关的部分
+        // 过滤掉所有工具相关的类型
+        const toolTypes = ['tool-call', 'tool-invocation', 'tool-result'];
+        return !toolTypes.includes(part.type) && part.type !== 'step-start';
       });
       
       // 如果是工具消息，完全过滤掉
@@ -118,15 +141,34 @@ export async function POST(req: Request) {
         return null;
       }
       
+      // 为助手消息添加工具调用摘要（可选）
+      let toolSummary = '';
+      if (msg.role === 'assistant' && msg.parts) {
+        // 收集所有工具调用的名称
+        const toolNames = new Set();
+        msg.parts.forEach(p => {
+          if (p.type === 'tool-call' && p.toolName) {
+            toolNames.add(p.toolName);
+          }
+          if (p.type === 'tool-invocation' && p.toolInvocation?.toolName) {
+            toolNames.add(p.toolInvocation.toolName);
+          }
+        });
+        
+        if (toolNames.size > 0) {
+          toolSummary = `\n[已执行工具: ${Array.from(toolNames).join(', ')}]`;
+        }
+      }
+      
       // 创建过滤后的消息对象
       const filteredMsg: any = {
         ...msg,
         parts: filteredParts,
-        // 更新 content 字段为过滤后的文本内容
+        // 更新 content 字段为过滤后的文本内容 + 工具摘要
         content: filteredParts
           .filter(p => p.type === 'text' && p.text)
           .map(p => p.text)
-          .join('\n')
+          .join('\n') + toolSummary
       };
       
       // 移除 tool_calls 字段（如果存在）
@@ -225,6 +267,13 @@ export async function POST(req: Request) {
 
 你是「数驭穹图」数据分析HTML报告生成助手，将数据转换为可视化HTML代码。
 
+### 🚨 最重要的规则
+**绝对不要混淆以下两个阶段：**
+- **数据获取阶段**：可以使用execute_sql等MCP工具
+- **HTML生成阶段**：禁止使用任何MCP工具，只输出HTML代码
+
+**判断标准：如果你说了"生成HTML报告"、"现在我来生成"等词语，立即停止工具调用！**
+
 ## 二、核心技术栈
 
 - **可视化**：ECharts 5.4.3+
@@ -241,16 +290,48 @@ export async function POST(req: Request) {
 5. 最常用\`execute_sql\` - SQL查询，优先使用聚合和筛选，避免token消耗爆炸，只获取必要的信息，默认limit 100
 4. \`generate_analysis_report\` - 返回统计信息，basic，statistical，correlation
 
-## 四、工作流程
+### ⚠️ 重要：避免循环调用
+1. 合理使用工具调用，一次对话最多可以使用20次工具
+2. **简化查询**：优先使用聚合查询，避免返回大量原始数据
+3. **表不存在错误**：只有在首次遇到 "no such table" 错误时才执行 import_file
 
-1. 导入数据 → 2. 获取mcp数据 → 3. 生成HTML代码 → 4. 输出报告
+## 四、工作流程 - 严格按顺序执行
+
+### 阶段1️⃣：数据准备（可使用MCP工具）
+1. 导入数据（import_file）
+2. 查询所需数据（execute_sql - 最多3-5次查询）
+3. 获取统计信息（可选：generate_analysis_report）
+
+### 阶段2️⃣：生成HTML报告（禁止使用MCP工具）
+**⚠️ 重要：当你说"现在我来生成HTML报告"或类似话语时，必须：**
+- ❌ **停止所有MCP工具调用**
+- ❌ **不要再执行execute_sql**
+- ✅ **直接使用Artifact输出完整HTML代码**
+- ✅ **使用已获取的数据生成可视化**
 
 **关键要求**：
-- ⚠️ 必须获取真实准确的mcp工具返回的数据
-- 📊 直接输出完整精美的HTML代码、
+- ⚠️ 数据获取完成后，立即生成HTML，不要继续查询
+- 📊 直接输出完整精美的HTML代码
 - 🎯 文件命名：\`{报告名}_v{版本}\`
+- 🚫 **生成HTML时绝对禁止调用execute_sql等MCP工具**
 
 ## 五、Artifact 使用说明
+
+### ⚠️ 关键规则：生成HTML = 停止查询
+**当你准备生成HTML报告时：**
+1. 立即停止所有数据查询
+2. 不要思考"我还需要查询什么"
+3. 直接使用已有数据生成HTML
+4. 如果数据不完整，使用模拟数据补充
+
+### 🔴 极其重要：一次性完整输出
+**必须一次性输出完整的HTML代码：**
+- ✅ 在一个Artifact中包含完整的HTML文档
+- ✅ 包含所有必要的图表配置和数据
+- ✅ 确保HTML可以直接运行，无需任何补充
+- ❌ 绝对不要分段输出HTML
+- ❌ 不要说"接下来我会继续生成..."
+- ❌ 不要因为长度截断HTML代码
 
 ### 使用 Artifact 的场景：
 - 只需要在生成html报告的使用 Artifact
@@ -296,16 +377,22 @@ export async function POST(req: Request) {
 ## 七、回复格式要求
 
 1. **简短确认**（1句话）
-2. **HTML代码**（完整可运行）
-3. **分析总结**（2-3句关键洞察）
-4. **探索建议**（3-5个新分析方向）
+2. **HTML代码**（必须完整，一次性输出）
+   - 单个Artifact包含全部代码
+   - 从`<!DOCTYPE html>`到`</html>`完整无缺
+   - 包含所有数据和配置，确保可直接运行
+3. **分析总结**（1句关键洞察）
 
 ## 八、核心原则
 
 ✅ **代码优先** - 直接生成完整专业华丽的HTML，少说多做
 ✅ **数据准确** - 必须基于mcp返回数据制作报告
+✅ **完整输出** - HTML必须一次性完整生成，绝不截断
 
-**使命：快速将数据转化为精美HTML报告！**
+**使命：快速将数据转化为完整的精美HTML报告！**
+
+### 🚨 最后提醒
+如果HTML代码较长，不要担心长度问题，必须输出完整代码。宁愿简化功能，也要确保HTML完整可运行。
 
 今天的日期：${new Date().toISOString().split('T')[0]}`,
     messages: processedMessages, // 使用处理后的消息（包含文件信息）
