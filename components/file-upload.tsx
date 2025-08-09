@@ -143,8 +143,14 @@ export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
       console.log('📋 File info created:', fileInfo);
 
       // 更新文件列表
-      onFilesChange([...files, fileInfo]);
-      console.log('✅ File list updated');
+      console.log('=== Before updating files ===');
+      console.log('Current files:', JSON.stringify(files, null, 2));
+      console.log('New file to add:', JSON.stringify(fileInfo, null, 2));
+      const updatedFiles = [...files, fileInfo];
+      console.log('Updated files array:', JSON.stringify(updatedFiles, null, 2));
+      onFilesChange(updatedFiles);
+      console.log('✅ onFilesChange called with updated files');
+      console.log('=== After updating files ===');
       
       // 重置输入
       if (fileInputRef.current) {

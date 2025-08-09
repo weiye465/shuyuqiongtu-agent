@@ -5,15 +5,15 @@ import { checkBotId } from "botid/server";
 export async function POST(request: NextRequest) {
   console.log('📤 Upload API called');
   
-  // Check bot protection
-  const { isBot, isGoodBot } = await checkBotId();
+  // 暂时禁用 BotId 检查以调试文件上传问题
+  // const { isBot, isGoodBot } = await checkBotId();
   
-  if (isBot && !isGoodBot) {
-    return NextResponse.json(
-      { error: "Bot is not allowed to access this endpoint" },
-      { status: 401 }
-    );
-  }
+  // if (isBot && !isGoodBot) {
+  //   return NextResponse.json(
+  //     { error: "Bot is not allowed to access this endpoint" },
+  //     { status: 401 }
+  //   );
+  // }
   
   try {
     const formData = await request.formData();

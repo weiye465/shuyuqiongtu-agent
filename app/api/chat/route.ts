@@ -28,14 +28,15 @@ export async function POST(req: Request) {
     files?: any[]; // FileInfo[]
   } = await req.json();
 
-  const { isBot, isGoodBot } = await checkBotId();
+  // 暂时禁用 BotId 检查以调试文件上传问题
+  // const { isBot, isGoodBot } = await checkBotId();
 
-  if (isBot && !isGoodBot) {
-    return new Response(
-      JSON.stringify({ error: "Bot is not allowed to access this endpoint" }),
-      { status: 401, headers: { "Content-Type": "application/json" } }
-    );
-  }
+  // if (isBot && !isGoodBot) {
+  //   return new Response(
+  //     JSON.stringify({ error: "Bot is not allowed to access this endpoint" }),
+  //     { status: 401, headers: { "Content-Type": "application/json" } }
+  //   );
+  // }
 
   if (!userId) {
     return new Response(
@@ -103,21 +104,79 @@ export async function POST(req: Request) {
 
   // 如果有文件，将文件信息添加到最后一条用户消息中
   let processedMessages = [...messages];
+  
+  console.log("=== File Processing Debug ===");
+  console.log("Files received:", JSON.stringify(files, null, 2));
+  console.log("Files length:", files?.length);
+  console.log("Files is array:", Array.isArray(files));
+  
   if (files && files.length > 0) {
+    console.log("Processing files...");
     const lastUserMessageIndex = processedMessages.findLastIndex(m => m.role === 'user');
+    console.log("Last user message index:", lastUserMessageIndex);
+    
     if (lastUserMessageIndex !== -1) {
-      const fileInfo = files.map(f => `已上传文件: ${f.name} (${f.type.toUpperCase()}) - URL: ${f.url}`).join('\n');
-      
-      // 创建新的消息副本，添加文件信息
-      const lastUserMessage = processedMessages[lastUserMessageIndex];
-      processedMessages[lastUserMessageIndex] = {
-        ...lastUserMessage,
-        content: lastUserMessage.content + '\n\n' + fileInfo
-      };
-      
-      console.log("Added file info to message:", fileInfo);
+      try {
+        // 安全地处理文件信息
+        const fileInfoArray = [];
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          console.log(`Processing file ${i}:`, JSON.stringify(file, null, 2));
+          
+          if (!file) {
+            console.error(`File at index ${i} is undefined`);
+            continue;
+          }
+          
+          const fileName = file.name || 'unknown';
+          const fileType = file.type || 'unknown';
+          const fileUrl = file.url || '';
+          
+          console.log(`File ${i} details - name: ${fileName}, type: ${fileType}, url: ${fileUrl}`);
+          
+          fileInfoArray.push(`已上传文件: ${fileName} (${fileType.toUpperCase()}) - URL: ${fileUrl}`);
+        }
+        
+        const fileInfo = fileInfoArray.join('\n');
+        console.log("Generated file info:", fileInfo);
+        
+        // 创建新的消息副本，添加文件信息到 content 和 parts
+        const lastUserMessage = processedMessages[lastUserMessageIndex];
+        console.log("Last user message before modification:", JSON.stringify(lastUserMessage, null, 2));
+        
+        // 获取原始的 parts 数组，确保包含文件信息
+        const originalParts = lastUserMessage.parts || [];
+        const updatedParts = [...originalParts];
+        
+        // 如果有文本部分，将文件信息添加到第一个文本部分
+        const textPartIndex = updatedParts.findIndex(p => p.type === 'text');
+        if (textPartIndex !== -1) {
+          updatedParts[textPartIndex] = {
+            ...updatedParts[textPartIndex],
+            text: updatedParts[textPartIndex].text + '\n\n' + fileInfo
+          };
+        } else {
+          // 如果没有文本部分，添加一个新的
+          updatedParts.push({
+            type: 'text',
+            text: fileInfo
+          });
+        }
+        
+        processedMessages[lastUserMessageIndex] = {
+          ...lastUserMessage,
+          content: lastUserMessage.content + '\n\n' + fileInfo,
+          parts: updatedParts
+        };
+        
+        console.log("Last user message after modification:", JSON.stringify(processedMessages[lastUserMessageIndex], null, 2));
+      } catch (error) {
+        console.error("Error processing files:", error);
+        console.error("Error stack:", error.stack);
+      }
     }
   }
+  console.log("=== End File Processing Debug ===");
 
   // Track if the response has completed
   let responseCompleted = false;

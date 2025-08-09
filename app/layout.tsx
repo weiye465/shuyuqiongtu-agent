@@ -44,7 +44,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <BotIdClient
+        {/* 暂时注释掉 BotIdClient 以调试文件上传问题 */}
+        {/* <BotIdClient
           protect={[
             {
               path: "/api/chat",
@@ -55,7 +56,7 @@ export default function RootLayout({
               method: "POST",
             }
           ]}
-        />
+        /> */}
       </head>
       <body className={`${inter.className}`}>
         <Providers>

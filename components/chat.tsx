@@ -37,6 +37,14 @@ export default function Chat() {
   const [generatedChatId, setGeneratedChatId] = useState<string>('');
   const [files, setFiles] = useState<FileInfo[]>([]);
   
+  // Debug: 监听 files 状态变化
+  useEffect(() => {
+    console.log("=== Files state changed ===");
+    console.log("New files state:", JSON.stringify(files, null, 2));
+    console.log("Files count:", files.length);
+    console.log("=== End files state change ===");
+  }, [files]);
+  
   // Get MCP server data from context
   const { mcpServersForApi } = useMCP();
   
@@ -80,6 +88,7 @@ export default function Chat() {
       const data = await response.json() as ChatData;
       // 设置文件列表
       if (data.files) {
+        console.log("Setting files from chat data:", JSON.stringify(data.files, null, 2));
         setFiles(data.files);
       }
       return data;
@@ -114,6 +123,12 @@ export default function Chat() {
     } as Message));
   }, [chatData]);
   
+  console.log("=== Chat Component Debug ===");
+  console.log("Current files state:", JSON.stringify(files, null, 2));
+  console.log("Files is array:", Array.isArray(files));
+  console.log("Files length:", files?.length);
+  console.log("=== End Chat Component Debug ===");
+
   const { messages, input, handleInputChange, handleSubmit, status, stop } =
     useChat({
       id: chatId || generatedChatId, // Use generated ID if no chatId in URL
@@ -134,6 +149,12 @@ export default function Chat() {
         }
       },
       onError: (error) => {
+        console.error("=== useChat Error ===");
+        console.error("Error object:", error);
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+        console.error("=== End useChat Error ===");
+        
         toast.error(
           error.message.length > 0
             ? error.message
@@ -145,22 +166,35 @@ export default function Chat() {
     
   // Custom submit handler
   const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+    console.log("=== Form Submit Debug ===");
+    console.log("Submitting with files:", JSON.stringify(files, null, 2));
+    console.log("Input:", input);
+    console.log("ChatId:", chatId);
+    console.log("GeneratedChatId:", generatedChatId);
+    console.log("=== End Form Submit Debug ===");
+    
     e.preventDefault();
     
-    if (!chatId && generatedChatId && input.trim()) {
-      // If this is a new conversation, redirect to the chat page with the generated ID
-      const effectiveChatId = generatedChatId;
-      
-      // Submit the form
-      handleSubmit(e);
-      
-      // Redirect to the chat page with the generated ID
-      router.push(`/chat/${effectiveChatId}`);
-    } else {
-      // Normal submission for existing chats
-      handleSubmit(e);
+    try {
+      if (!chatId && generatedChatId && input.trim()) {
+        // If this is a new conversation, redirect to the chat page with the generated ID
+        const effectiveChatId = generatedChatId;
+        
+        // Submit the form
+        handleSubmit(e);
+        
+        // Redirect to the chat page with the generated ID
+        router.push(`/chat/${effectiveChatId}`);
+      } else {
+        // Normal submission for existing chats
+        handleSubmit(e);
+      }
+    } catch (error) {
+      console.error("=== Form Submit Error ===");
+      console.error("Error during form submission:", error);
+      console.error("=== End Form Submit Error ===");
     }
-  }, [chatId, generatedChatId, input, handleSubmit, router]);
+  }, [chatId, generatedChatId, input, handleSubmit, router, files]);
 
   const isLoading = status === "streaming" || status === "submitted" || isLoadingChat;
 
