@@ -75,10 +75,8 @@ export const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
       // 模拟的进度值，用于平滑显示
       let simulatedProgress = 0;
       let actualProgress = 0;
-      let progressInterval: NodeJS.Timeout;
-      
       // 开始模拟进度（缓慢增长到90%）
-      progressInterval = setInterval(() => {
+      const progressInterval = setInterval(() => {
         if (simulatedProgress < 90 && simulatedProgress < actualProgress + 20) {
           // 缓慢增长，但不超过实际进度太多
           simulatedProgress += 0.5; // 每50ms增加0.5%

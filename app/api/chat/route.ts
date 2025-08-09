@@ -183,7 +183,7 @@ export async function POST(req: Request) {
       
       // 不再添加工具调用摘要，进一步节约token
       // 如果需要可以通过设置参数控制是否添加摘要
-      let toolSummary = '';
+      const toolSummary = '';
       /* 注释掉工具摘要以节约更多token
       if (msg.role === 'assistant' && msg.parts) {
         // 收集所有工具调用的名称
@@ -224,7 +224,7 @@ export async function POST(req: Request) {
   
   // 如果有文件，将文件信息添加到最后一条用户消息中
   // 根据 filterTools 参数决定是否过滤工具调用
-  let processedMessages = filterTools ? filterToolParts(messages) : [...messages];
+  const processedMessages = filterTools ? filterToolParts(messages) : [...messages];
   
   console.log("=== File Processing Debug ===");
   console.log("Files received:", JSON.stringify(files, null, 2));

@@ -16,14 +16,7 @@ export function ArtifactMarkdown({ content, className }: ArtifactMarkdownProps) 
   const { parseArtifactTags } = useArtifactParser();
   const firstArtifactIdRef = useRef<string | null>(null);
   
-  // If not in ArtifactProvider, just render plain Markdown
-  if (!artifactContext) {
-    return <Markdown>{content}</Markdown>;
-  }
-  
-  const { createArtifact, getArtifact, autoActivateArtifact, activeArtifact, userHasInteracted } = artifactContext;
-  
-  // Parse artifacts and get modified content
+  // Parse artifacts and get modified content - must be before conditional return
   const { processedContent, artifactElements, artifacts } = useMemo(() => {
     const { content: modifiedContent, artifacts } = parseArtifactTags(content);
     
@@ -63,21 +56,30 @@ export function ArtifactMarkdown({ content, className }: ArtifactMarkdownProps) 
       artifactElements: elements,
       artifacts
     };
-  }, [content]);
+  }, [content, parseArtifactTags]);
   
-  // Store artifacts in the provider
+  // Store artifacts in the provider - must be before conditional return
   useEffect(() => {
+    if (!artifactContext) return;
     artifacts.forEach(artifact => {
       createArtifact(artifact);
     });
-  }, [artifacts, createArtifact]);
+  }, [artifacts, artifactContext?.createArtifact]);
   
   // Auto-activate the first artifact when it's created (only if user hasn't interacted)
   useEffect(() => {
+    if (!artifactContext) return;
     if (artifacts.length > 0 && !activeArtifact && !userHasInteracted) {
       autoActivateArtifact(artifacts[0].id);
     }
-  }, [artifacts, activeArtifact, userHasInteracted, autoActivateArtifact]);
+  }, [artifacts, artifactContext?.activeArtifact, artifactContext?.userHasInteracted, artifactContext?.autoActivateArtifact]);
+  
+  // If not in ArtifactProvider, just render plain Markdown
+  if (!artifactContext) {
+    return <Markdown>{content}</Markdown>;
+  }
+  
+  const { createArtifact, getArtifact, autoActivateArtifact, activeArtifact, userHasInteracted } = artifactContext;
   
   return (
     <div className={className}>
