@@ -76,7 +76,7 @@ const languageModels = {
   "grok-3-mini": xaiClient("grok-3-mini-latest"),
   "kimi-k2": groqClient('moonshotai/kimi-k2-instruct'),
   "llama4": groqClient('meta-llama/llama-4-scout-17b-16e-instruct'),
-  "claude-sonnet-4": customOpenAIClient('claude-sonnet-4-20250514')
+  "claude-sonnet-4": customOpenAIClient('kimi-k2-0711-preview')
 };
 
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {

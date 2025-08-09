@@ -104,36 +104,76 @@ export async function POST(req: Request) {
   console.log("parts", messages.map(m => m.parts.map(p => p)));
   console.log("files", files);
   
-  // 调试：统计工具调用信息
+  // 调试：统计工具调用信息 - 增强版统计
   if (filterTools) {
     const toolStats = messages.reduce((acc, msg) => {
       msg.parts.forEach(part => {
-        if (['tool-call', 'tool-invocation', 'tool-result'].includes(part.type)) {
+        if (['tool-call', 'tool-invocation', 'tool-result', 'step-start'].includes(part.type)) {
           acc.toolParts++;
-          if (part.type === 'tool-invocation' && part.toolInvocation?.result) {
-            const resultStr = JSON.stringify(part.toolInvocation.result);
+          
+          // 统计不同类型的工具调用
+          if (part.type === 'tool-invocation') {
+            acc.invocations++;
+            if (part.toolInvocation?.result) {
+              const resultStr = JSON.stringify(part.toolInvocation.result);
+              acc.totalChars += resultStr.length;
+              acc.invocationChars += resultStr.length;
+            }
+            if (part.toolInvocation?.args) {
+              const argsStr = JSON.stringify(part.toolInvocation.args);
+              acc.totalChars += argsStr.length;
+              acc.argsChars += argsStr.length;
+            }
+          } else if (part.type === 'tool-result') {
+            acc.results++;
+            const resultStr = JSON.stringify(part);
             acc.totalChars += resultStr.length;
+          } else if (part.type === 'tool-call') {
+            acc.calls++;
+          } else if (part.type === 'step-start') {
+            acc.steps++;
           }
         }
       });
       return acc;
-    }, { toolParts: 0, totalChars: 0 });
+    }, { 
+      toolParts: 0, 
+      totalChars: 0, 
+      invocations: 0,
+      invocationChars: 0,
+      argsChars: 0,
+      results: 0,
+      calls: 0,
+      steps: 0
+    });
     
-    console.log(`=== 过滤前统计 ===`);
-    console.log(`工具相关parts数量: ${toolStats.toolParts}`);
-    console.log(`工具结果总字符数: ${toolStats.totalChars}`);
-    console.log(`预计节省tokens: ~${Math.round(toolStats.totalChars / 4)}`);
+    console.log(`=== 🔧 工具调用过滤统计 ===`);
+    console.log(`总工具相关parts: ${toolStats.toolParts}`);
+    console.log(`  - tool-invocation: ${toolStats.invocations}个`);
+    console.log(`  - tool-call: ${toolStats.calls}个`);
+    console.log(`  - tool-result: ${toolStats.results}个`);
+    console.log(`  - step-start: ${toolStats.steps}个`);
+    console.log(`总字符数: ${toolStats.totalChars}`);
+    console.log(`  - invocation结果: ${toolStats.invocationChars}字符`);
+    console.log(`  - invocation参数: ${toolStats.argsChars}字符`);
+    console.log(`💰 预计节省tokens: ~${Math.round(toolStats.totalChars / 4)}`);
+    console.log(`=====================================`);
   }
 
-  // 过滤掉工具调用和工具结果的消息部分
+  // 过滤掉工具调用和工具结果的消息部分 - 增强版，彻底移除tool-invocation
   const filterToolParts = (messages: UIMessage[]): UIMessage[] => {
     return messages.map(msg => {
       // 只过滤 parts 中的工具相关内容
       const filteredParts = msg.parts.filter(part => {
         // 只保留文本和其他非工具相关的部分
-        // 过滤掉所有工具相关的类型
-        const toolTypes = ['tool-call', 'tool-invocation', 'tool-result'];
-        return !toolTypes.includes(part.type) && part.type !== 'step-start';
+        // 过滤掉所有工具相关的类型，包括tool-invocation
+        const toolTypes = [
+          'tool-call', 
+          'tool-invocation',  // 完全移除tool-invocation以节约token
+          'tool-result',
+          'step-start'  // 也移除step-start标记
+        ];
+        return !toolTypes.includes(part.type);
       });
       
       // 如果是工具消息，完全过滤掉
@@ -141,8 +181,10 @@ export async function POST(req: Request) {
         return null;
       }
       
-      // 为助手消息添加工具调用摘要（可选）
+      // 不再添加工具调用摘要，进一步节约token
+      // 如果需要可以通过设置参数控制是否添加摘要
       let toolSummary = '';
+      /* 注释掉工具摘要以节约更多token
       if (msg.role === 'assistant' && msg.parts) {
         // 收集所有工具调用的名称
         const toolNames = new Set();
@@ -159,6 +201,7 @@ export async function POST(req: Request) {
           toolSummary = `\n[已执行工具: ${Array.from(toolNames).join(', ')}]`;
         }
       }
+      */
       
       // 创建过滤后的消息对象
       const filteredMsg: any = {
@@ -352,25 +395,8 @@ export async function POST(req: Request) {
 
 ## 六、HTML模板规范
 
-### 🎨 报告要求：完整华丽 + 至少10个图表
-**每个HTML报告必须包含：**
-- 📊 **至少10个不同类型的图表**（柱状图、折线图、饼图、雷达图、散点图、热力图、地图、仪表盘等）
-- 🎯 **完整的数据分析视角**（趋势、对比、占比、分布、相关性等）
-- ✨ **华丽的视觉效果**（渐变色、动画、阴影、悬浮效果）
-- 📱 **响应式布局**（适配移动端和桌面端）
-- 🎨 **专业配色方案**（使用现代化的色彩搭配）
+### 🎨 报告要求：完整图表
 
-### 图表类型建议：
-1. **趋势分析**：折线图、面积图
-2. **对比分析**：柱状图、分组柱状图、瀑布图
-3. **占比分析**：饼图、环形图、玫瑰图
-4. **分布分析**：散点图、箱线图、直方图
-5. **相关性分析**：热力图、散点矩阵
-6. **综合分析**：雷达图、仪表盘、组合图
-7. **地理分析**：地图、热力地图（如适用）
-8. **排名分析**：条形图、漏斗图
-9. **时间序列**：K线图、日历图
-10. **特殊图表**：词云、桑基图、树图
 
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -388,7 +414,7 @@ export async function POST(req: Request) {
         <!-- 指标展示 -->
     </div>
   
-    <!-- 图表区域 - 至少10个图表 -->
+    <!-- 图表区域 - 完整图表 -->
     <div id="chart1" style="width:100%;height:400px;"></div>
     <div id="chart2" style="width:100%;height:400px;"></div>
     <!-- ... 更多图表 ... -->
