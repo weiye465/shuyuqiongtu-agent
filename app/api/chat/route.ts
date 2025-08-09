@@ -476,19 +476,36 @@ export async function POST(req: Request) {
     },
     async onFinish({ response }) {
       responseCompleted = true;
+      
+      // 过滤响应消息中的工具调用信息
+      const filteredResponseMessages = response.messages.map(msg => {
+        if (msg.parts) {
+          const filteredParts = msg.parts.filter(part => {
+            // 过滤掉所有工具相关的类型
+            const toolTypes = ['tool-call', 'tool-invocation', 'tool-result', 'step-start'];
+            return !toolTypes.includes(part.type);
+          });
+          return { ...msg, parts: filteredParts };
+        }
+        return msg;
+      });
+      
       const allMessages = appendResponseMessages({
         messages: processedMessages, // 使用处理后的消息
-        responseMessages: response.messages,
+        responseMessages: filteredResponseMessages, // 使用过滤后的响应消息
       });
+
+      // 再次过滤所有消息，确保没有工具调用信息被保存
+      const messagesToSave = filterTools ? filterToolParts(allMessages) : allMessages;
 
       await saveChat({
         id,
         userId,
-        messages: allMessages,
+        messages: messagesToSave,
         files, // 保存文件信息
       });
 
-      const dbMessages = convertToDBMessages(allMessages, id);
+      const dbMessages = convertToDBMessages(messagesToSave, id);
       await saveMessages({ messages: dbMessages });
 
       // Clean up resources - now this just closes the client connections
@@ -513,6 +530,8 @@ export async function POST(req: Request) {
   // Add chat ID to response headers so client can know which chat was created
   return result.toDataStreamResponse({
     sendReasoning: true,
+    // 减少发送的元数据
+    includeToolResults: false, // 不包含工具结果详情
     headers: {
       'X-Chat-ID': id
     },
